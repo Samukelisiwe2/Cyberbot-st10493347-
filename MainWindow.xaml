@@ -42,7 +42,7 @@
                        HorizontalContentAlignment="Center"
                        FontSize="36"
                        FontWeight="Bold"
-                       Foreground="#FF253AEC"/>
+                       Foreground="#FF253AEC" FontFamily="Ravie"/>
 
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Center"
@@ -76,10 +76,10 @@
 
             <ListBox x:Name="MessagesList"
                      ItemsSource="{Binding Messages}"
-                     Background="#ECE5DD"
+                     Background="#FFDDE8EC"
                      BorderThickness="0"
                      Padding="10"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" Height="210" VerticalAlignment="Bottom">
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,-1,0,0">
 
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
@@ -169,7 +169,7 @@
                     Margin="0,5,0,0"
                     FontWeight="Bold"
                     FontSize="16"
-                    Click="btnSend_Click"/>
+                    Click="btnSend_Click" Background="#FF7FB9EF"/>
         </Grid>
 
     </Grid>
