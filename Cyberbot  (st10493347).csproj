@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>Cyberbot___st10493347_</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="depositphotos_176577870-stock-illustration-cute-smiling-funny-robot-chat.jpg" />
+    <None Remove="girl.jpeg" />
+    <None Remove="green dot.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="depositphotos_176577870-stock-illustration-cute-smiling-funny-robot-chat.jpg" />
+    <Resource Include="girl.jpeg" />
+    <Resource Include="green dot.png" />
+  </ItemGroup>
+
+</Project>
