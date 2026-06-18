@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Cyberbot___st10493347_.Models
+namespace Cyberbot___st10493347_.Services
 {
-    class Class1
+    class TaskStorageHelper
     {
     }
 }
