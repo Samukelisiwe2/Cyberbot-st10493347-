@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11512.155
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CybersecurityAwarenessBot_Final", "CybersecurityAwarenessBot_Final.csproj", "{79B971CC-27E1-1360-BA66-D9DCD19A7EAA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cyberbot  (st10493347)", "..\..\..\source\repos\Cyberbot  (st10493347)\Cyberbot  (st10493347).csproj", "{9028FBDF-D3D9-6757-4540-B7A510F8EB7B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{79B971CC-27E1-1360-BA66-D9DCD19A7EAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79B971CC-27E1-1360-BA66-D9DCD19A7EAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79B971CC-27E1-1360-BA66-D9DCD19A7EAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79B971CC-27E1-1360-BA66-D9DCD19A7EAA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9028FBDF-D3D9-6757-4540-B7A510F8EB7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9028FBDF-D3D9-6757-4540-B7A510F8EB7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9028FBDF-D3D9-6757-4540-B7A510F8EB7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9028FBDF-D3D9-6757-4540-B7A510F8EB7B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {94BE2DB7-0771-4FEE-96B4-6E2B1E29EF05}
+	EndGlobalSection
+EndGlobal
