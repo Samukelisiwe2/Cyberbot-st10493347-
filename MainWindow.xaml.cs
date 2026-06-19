@@ -651,7 +651,7 @@ namespace Cyberbot___st10493347_
             TasksGrid.ItemsSource = taskManager.GetAllTasks();
         }
 
-        private TaskItem GetSelectedTask()
+        private TaskItem? GetSelectedTask()
         {
             return TasksGrid.SelectedItem as TaskItem;
         }
@@ -687,7 +687,7 @@ namespace Cyberbot___st10493347_
 
         private void btnCompleteTask_Click(object sender, RoutedEventArgs e)
         {
-            TaskItem selected = GetSelectedTask();
+            TaskItem? selected = GetSelectedTask();
 
             if (selected == null)
             {
@@ -705,7 +705,7 @@ namespace Cyberbot___st10493347_
 
         private void btnDeleteTask_Click(object sender, RoutedEventArgs e)
         {
-            TaskItem selected = GetSelectedTask();
+            TaskItem? selected = GetSelectedTask();
 
             if (selected == null)
             {
