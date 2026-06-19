@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Cyberbot___st10493347_.Services;
+using Cyberbot___st10493347_.Models;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -21,6 +23,11 @@ namespace Cyberbot___st10493347_
         private string favouriteTopic = "";
         private string lastTopic = "";
         private bool waitingForName = true;
+        private bool waitingForReminder = false;
+
+        private readonly ActivityLogger activityLogger;
+        private readonly TaskManager taskManager;
+        private readonly QuizManager quizManager;
 
         private readonly Dictionary<string, List<string>> responses = new Dictionary<string, List<string>>
         {
@@ -266,6 +273,13 @@ namespace Cyberbot___st10493347_
             Messages = new ObservableCollection<MessageItem>();
             DataContext = this;
 
+            activityLogger = new ActivityLogger();
+            taskManager = new TaskManager(activityLogger);
+            quizManager = new QuizManager();
+
+            LoadTasksIntoGrid();
+            RefreshActivityLog(false);
+
             StartChat();
         }
 
@@ -311,6 +325,15 @@ namespace Cyberbot___st10493347_
                 AddBotMessage("Now we can continue. You can ask me about passwords, phishing, malware, scams, privacy, safe browsing, ransomware, 2FA, public Wi-Fi, or firewalls.");
                 AddBotMessage("You can also ask follow-up questions like 'why?', 'how?', 'give me an example', or 'tell me more'.");
 
+                ClearInputAndScroll();
+                return;
+            }
+
+            string part3Reply = HandlePart3Intent(userMessage);
+
+            if (!string.IsNullOrWhiteSpace(part3Reply))
+            {
+                AddBotMessage(part3Reply);
                 ClearInputAndScroll();
                 return;
             }
@@ -616,6 +639,530 @@ namespace Cyberbot___st10493347_
                 txtMessage.Foreground = new SolidColorBrush(Color.FromRgb(90, 84, 84));
             }
         }
+
+        private void LoadTasksIntoGrid()
+        {
+            if (TasksGrid == null)
+            {
+                return;
+            }
+
+            TasksGrid.ItemsSource = null;
+            TasksGrid.ItemsSource = taskManager.GetAllTasks();
+        }
+
+        private TaskItem GetSelectedTask()
+        {
+            return TasksGrid.SelectedItem as TaskItem;
+        }
+
+        private void btnAddTask_Click(object sender, RoutedEventArgs e)
+        {
+            string title = txtTaskTitle.Text.Trim();
+            string description = txtTaskDescription.Text.Trim();
+            string reminder = txtTaskReminder.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                MessageBox.Show("Enter a task title first.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(description))
+            {
+                description = BuildTaskDescription(title);
+            }
+
+            string reply = taskManager.AddTask(title, description, reminder);
+
+            MessageBox.Show(reply);
+
+            txtTaskTitle.Text = "";
+            txtTaskDescription.Text = "";
+            txtTaskReminder.Text = "";
+
+            LoadTasksIntoGrid();
+            RefreshActivityLog(false);
+        }
+
+        private void btnCompleteTask_Click(object sender, RoutedEventArgs e)
+        {
+            TaskItem selected = GetSelectedTask();
+
+            if (selected == null)
+            {
+                MessageBox.Show("Select a task first.");
+                return;
+            }
+
+            string reply = taskManager.MarkAsComplete(selected);
+
+            MessageBox.Show(reply);
+
+            LoadTasksIntoGrid();
+            RefreshActivityLog(false);
+        }
+
+        private void btnDeleteTask_Click(object sender, RoutedEventArgs e)
+        {
+            TaskItem selected = GetSelectedTask();
+
+            if (selected == null)
+            {
+                MessageBox.Show("Select a task first.");
+                return;
+            }
+
+            string reply = taskManager.DeleteTask(selected);
+
+            MessageBox.Show(reply);
+
+            LoadTasksIntoGrid();
+            RefreshActivityLog(false);
+        }
+
+        private string BuildTaskDescription(string title)
+        {
+            string lower = title.ToLower();
+
+            if (lower.Contains("privacy"))
+            {
+                return "Review account privacy settings to ensure your data is protected.";
+            }
+
+            if (lower.Contains("password"))
+            {
+                return "Update the account password and make sure it is strong and unique.";
+            }
+
+            if (lower.Contains("2fa") || lower.Contains("two-factor") || lower.Contains("two factor"))
+            {
+                return "Enable two-factor authentication to add an extra layer of account protection.";
+            }
+
+            if (lower.Contains("phishing"))
+            {
+                return "Review phishing warning signs and report suspicious emails or links.";
+            }
+
+            if (lower.Contains("malware") || lower.Contains("antivirus"))
+            {
+                return "Check malware protection and make sure antivirus software is updated.";
+            }
+
+            return "Cybersecurity task created by the chatbot.";
+        }
+
+        private void RefreshActivityLog(bool full)
+        {
+            if (txtActivityLog == null)
+            {
+                return;
+            }
+
+            txtActivityLog.Text = full
+                ? activityLogger.GetFullLog()
+                : activityLogger.GetRecentLog(10);
+
+            if (!full && activityLogger.GetCount() > 10)
+            {
+                txtActivityLog.Text += "\nType 'show more' or click Show More to view the full activity history.";
+            }
+        }
+
+        private void btnRefreshLog_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshActivityLog(false);
+        }
+
+        private void btnShowMoreLog_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshActivityLog(true);
+        }
+
+        private void StartQuizFromChat()
+        {
+            quizManager.ResetQuiz();
+
+            DisplayCurrentQuestion();
+
+            btnSubmitAnswer.IsEnabled = true;
+            btnNextQuestion.IsEnabled = false;
+
+            activityLogger.Log("Quiz started");
+            RefreshActivityLog(false);
+        }
+
+        private void btnStartQuiz_Click(object sender, RoutedEventArgs e)
+        {
+            StartQuizFromChat();
+        }
+
+        private void DisplayCurrentQuestion()
+        {
+            if (quizManager.IsFinished())
+            {
+                txtQuizQuestion.Text = "Quiz completed. Final score: " + quizManager.GetFinalScore();
+                txtQuizFeedback.Text = quizManager.GetFinalMessage();
+                txtQuizScore.Text = "Score: " + quizManager.GetFinalScore();
+
+                SetQuizOptionsVisibility(false);
+
+                btnSubmitAnswer.IsEnabled = false;
+                btnNextQuestion.IsEnabled = false;
+
+                activityLogger.Log("Quiz completed - score: " + quizManager.GetFinalScore());
+                RefreshActivityLog(false);
+
+                return;
+            }
+
+            QuizQuestion question = quizManager.GetCurrentQuestion();
+
+            txtQuizQuestion.Text = "Question " + quizManager.CurrentNumber + " of " + quizManager.TotalQuestions + ": " + question.Question;
+            txtQuizFeedback.Text = "";
+            txtQuizScore.Text = "Score: " + quizManager.Score + " out of " + quizManager.TotalQuestions;
+
+            rbOptionA.IsChecked = false;
+            rbOptionB.IsChecked = false;
+            rbOptionC.IsChecked = false;
+            rbOptionD.IsChecked = false;
+
+            rbOptionA.Content = question.Options.Count > 0 ? question.Options[0] : "";
+            rbOptionB.Content = question.Options.Count > 1 ? question.Options[1] : "";
+            rbOptionC.Content = question.Options.Count > 2 ? question.Options[2] : "";
+            rbOptionD.Content = question.Options.Count > 3 ? question.Options[3] : "";
+
+            rbOptionA.Visibility = Visibility.Visible;
+            rbOptionB.Visibility = Visibility.Visible;
+            rbOptionC.Visibility = question.Options.Count > 2 ? Visibility.Visible : Visibility.Collapsed;
+            rbOptionD.Visibility = question.Options.Count > 3 ? Visibility.Visible : Visibility.Collapsed;
+
+            btnSubmitAnswer.IsEnabled = true;
+            btnNextQuestion.IsEnabled = false;
+        }
+
+        private void SetQuizOptionsVisibility(bool visible)
+        {
+            Visibility value = visible ? Visibility.Visible : Visibility.Collapsed;
+
+            rbOptionA.Visibility = value;
+            rbOptionB.Visibility = value;
+            rbOptionC.Visibility = value;
+            rbOptionD.Visibility = value;
+        }
+
+        private void btnSubmitAnswer_Click(object sender, RoutedEventArgs e)
+        {
+            if (quizManager.IsFinished())
+            {
+                return;
+            }
+
+            string selectedAnswer = GetSelectedQuizAnswer();
+
+            if (string.IsNullOrWhiteSpace(selectedAnswer))
+            {
+                MessageBox.Show("Choose an answer first.");
+                return;
+            }
+
+            QuizQuestion question = quizManager.GetCurrentQuestion();
+
+            bool correct = quizManager.SubmitAnswer(selectedAnswer);
+
+            txtQuizFeedback.Text = (correct ? "Correct! " : "Incorrect. ") + question.Explanation;
+            txtQuizScore.Text = "Score: " + quizManager.Score + " out of " + quizManager.TotalQuestions;
+
+            btnSubmitAnswer.IsEnabled = false;
+            btnNextQuestion.IsEnabled = true;
+        }
+
+        private string GetSelectedQuizAnswer()
+        {
+            if (rbOptionA.IsChecked == true)
+            {
+                string value = rbOptionA.Content.ToString() ?? "";
+                return value.StartsWith("A)") ? "A" : value;
+            }
+
+            if (rbOptionB.IsChecked == true)
+            {
+                string value = rbOptionB.Content.ToString() ?? "";
+                return value.StartsWith("B)") ? "B" : value;
+            }
+
+            if (rbOptionC.IsChecked == true)
+            {
+                string value = rbOptionC.Content.ToString() ?? "";
+                return value.StartsWith("C)") ? "C" : value;
+            }
+
+            if (rbOptionD.IsChecked == true)
+            {
+                string value = rbOptionD.Content.ToString() ?? "";
+                return value.StartsWith("D)") ? "D" : value;
+            }
+
+            return "";
+        }
+
+        private void btnNextQuestion_Click(object sender, RoutedEventArgs e)
+        {
+            DisplayCurrentQuestion();
+        }
+
+        private string HandlePart3Intent(string userMessage)
+        {
+            string input = userMessage.ToLower();
+
+            if (waitingForReminder && (input == "no" || input.Contains("not now") || input.Contains("skip")))
+            {
+                waitingForReminder = false;
+                return "No problem. The task has been saved without a reminder.";
+            }
+
+            if (waitingForReminder && IsReminderConfirmation(input))
+            {
+                waitingForReminder = false;
+
+                string reminder = ExtractReminder(userMessage);
+                string reply = taskManager.SetReminderForLastTask(reminder);
+
+                LoadTasksIntoGrid();
+                RefreshActivityLog(false);
+
+                return reply;
+            }
+
+            if (input.Contains("show more"))
+            {
+                string fullLog = activityLogger.GetFullLog();
+                txtActivityLog.Text = fullLog;
+                return fullLog;
+            }
+
+            if (IsShowLogIntent(input))
+            {
+                activityLogger.Log("Activity log requested");
+                RefreshActivityLog(false);
+
+                string log = activityLogger.GetRecentLog(10);
+
+                if (activityLogger.GetCount() > 10)
+                {
+                    log += "\nType 'show more' or click Show More to view the full activity history.";
+                }
+
+                return log;
+            }
+
+            if (IsQuizIntent(input))
+            {
+                StartQuizFromChat();
+                return "Quiz started. Open the Quiz tab and answer one question at a time.";
+            }
+
+            if (IsReminderIntent(input) && !IsAddTaskIntent(input))
+            {
+                string title = ExtractReminderTaskTitle(userMessage);
+                string description = BuildTaskDescription(title);
+                string reminder = ExtractReminder(userMessage);
+
+                taskManager.AddTask(title, description, reminder);
+
+                activityLogger.Log("NLP recognised reminder intent from: '" + userMessage + "'");
+
+                LoadTasksIntoGrid();
+                RefreshActivityLog(false);
+
+                return "Reminder set for '" + title + "' on " + reminder + ".";
+            }
+
+            if (IsAddTaskIntent(input))
+            {
+                string title = ExtractTaskTitle(userMessage);
+                string description = BuildTaskDescription(title);
+
+                string reply = taskManager.AddTask(title, description, "");
+
+                waitingForReminder = true;
+
+                activityLogger.Log("NLP recognised task intent from: '" + userMessage + "'");
+
+                LoadTasksIntoGrid();
+                RefreshActivityLog(false);
+
+                return reply;
+            }
+
+            return "";
+        }
+
+        private bool IsAddTaskIntent(string input)
+        {
+            return input.Contains("add task")
+                || input.Contains("add a task")
+                || input.Contains("create task")
+                || input.Contains("create a task")
+                || input.Contains("i need to")
+                || input.Contains("enable")
+                || input.Contains("set up");
+        }
+
+        private bool IsReminderIntent(string input)
+        {
+            return input.Contains("remind me")
+                || input.Contains("reminder")
+                || input.Contains("set a reminder")
+                || input.Contains("don't forget")
+                || input.Contains("dont forget");
+        }
+
+        private bool IsReminderConfirmation(string input)
+        {
+            return input.Contains("yes")
+                || input.Contains("remind me")
+                || input.Contains("in ")
+                || input.Contains("tomorrow")
+                || input.Contains("next week")
+                || input.Contains("today")
+                || input.Contains("tonight");
+        }
+
+        private bool IsQuizIntent(string input)
+        {
+            return input.Contains("start quiz")
+                || input.Contains("take quiz")
+                || input.Contains("test my knowledge")
+                || input.Contains("quiz me")
+                || input.Contains("play the game");
+        }
+
+        private bool IsShowLogIntent(string input)
+        {
+            return input.Contains("show activity log")
+                || input.Contains("what have you done")
+                || input.Contains("what did you do")
+                || input.Contains("show log")
+                || input.Contains("recent actions");
+        }
+
+        private string ExtractTaskTitle(string message)
+        {
+            string title = message;
+            string lower = message.ToLower();
+
+            string[] phrases =
+            {
+                "add a task to",
+                "add task to",
+                "add a task",
+                "add task",
+                "create a task to",
+                "create task to",
+                "create a task",
+                "create task",
+                "i need to",
+                "set up"
+            };
+
+            foreach (string phrase in phrases)
+            {
+                int index = lower.IndexOf(phrase);
+
+                if (index >= 0)
+                {
+                    title = message.Substring(index + phrase.Length).Trim();
+                    break;
+                }
+            }
+
+            title = title.Trim('.', ' ');
+
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                title = "Review cybersecurity task";
+            }
+
+            return Capitalise(title);
+        }
+
+        private string ExtractReminderTaskTitle(string message)
+        {
+            string lower = message.ToLower();
+            string title = message;
+
+            int start = lower.IndexOf("remind me to");
+
+            if (start >= 0)
+            {
+                title = message.Substring(start + "remind me to".Length).Trim();
+            }
+
+            string[] timeWords =
+            {
+                " tomorrow",
+                " in ",
+                " next week",
+                " today",
+                " tonight"
+            };
+
+            foreach (string timeWord in timeWords)
+            {
+                int index = title.ToLower().IndexOf(timeWord);
+
+                if (index >= 0)
+                {
+                    title = title.Substring(0, index).Trim();
+                }
+            }
+
+            title = title.Trim('.', ' ');
+
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                title = "Review cybersecurity task";
+            }
+
+            return Capitalise(title);
+        }
+
+        private string ExtractReminder(string message)
+        {
+            string lower = message.ToLower().Trim();
+
+            if (lower.Contains("tomorrow"))
+            {
+                return "tomorrow";
+            }
+
+            if (lower.Contains("next week"))
+            {
+                return "next week";
+            }
+
+            if (lower.Contains("today"))
+            {
+                return "today";
+            }
+
+            if (lower.Contains("tonight"))
+            {
+                return "tonight";
+            }
+
+            int inIndex = lower.IndexOf("in ");
+
+            if (inIndex >= 0)
+            {
+                return message.Substring(inIndex).Trim().Trim('.');
+            }
+
+            return message.Trim().Trim('.');
+        }
+
     }
 
     public class MessageItem
