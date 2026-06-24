@@ -10,16 +10,19 @@ namespace Cyberbot___st10493347_.Data
 {
     public class ApplicationDbContext : DbContext
         {
-            public DbSet<TaskItem> Tasks { get; set; } = null!;
-            public DbSet<ActivityLogEntry> Logs { get; set; } = null!;
+        // Used to perform CRUD operations on TaskItem records.
+        public DbSet<TaskItem> Tasks { get; set; } = null!;
+        // Used to store and retrieve activity log entries.
+        public DbSet<ActivityLogEntry> Logs { get; set; } = null!;
 
             protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             {
-                if (!optionsBuilder.IsConfigured)
+            // Only configure the context if it has not already been configured.
+            if (!optionsBuilder.IsConfigured)
                 {
-                    optionsBuilder.UseSqlite("Data Source=database.db");
-                    optionsBuilder.UseLazyLoadingProxies();
-                }
+                    optionsBuilder.UseSqlite("Data Source=database.db");// Configure SQLite as the database provider.
+                optionsBuilder.UseLazyLoadingProxies(); // Enable lazy loading for navigation properties.
+            }
             }
         }
     }

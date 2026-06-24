@@ -8,8 +8,11 @@ namespace Cyberbot___st10493347_.Models
 {
         public class ActivityLogEntry
         {
-            public int Id { get; set; }
-            public string Description { get; set; } = "";
-            public string CreatedAt { get; set; } = "";
+        // Unique identifier for the activity log entry.
+        public int Id { get; set; }
+        // Description of the activity or event that occurred.
+        public string Description { get; set; } = "";
+        // Date and time when the activity was created.
+        public string CreatedAt { get; set; } = "";
         }
     }
